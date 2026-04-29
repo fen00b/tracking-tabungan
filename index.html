@@ -294,6 +294,35 @@
           <input type="number" id="daily_target" value="50000" oninput="save();render()" />
         </div>
       </div>
+      <div style="border-top:1px solid var(--border);margin:12px 0 10px;"></div>
+      <div class="settings-label" style="margin-bottom:8px">Gaji & Alokasi</div>
+      <div class="settings-grid">
+        <div>
+          <div class="settings-label">Gaji bulanan</div>
+          <input type="number" id="s_salary" placeholder="4400000" oninput="save();render()" />
+        </div>
+        <div>
+          <div class="settings-label">Kebutuhan harian</div>
+          <input type="number" id="s_harian" placeholder="1500000" oninput="save();render()" />
+        </div>
+        <div>
+          <div class="settings-label">Sewa</div>
+          <input type="number" id="s_sewa" placeholder="1000000" oninput="save();render()" />
+        </div>
+        <div>
+          <div class="settings-label">BPJS</div>
+          <input type="number" id="s_bpjs" placeholder="300000" oninput="save();render()" />
+        </div>
+        <div>
+          <div class="settings-label">Listrik</div>
+          <input type="number" id="s_listrik" placeholder="200000" oninput="save();render()" />
+        </div>
+        <div>
+          <div class="settings-label">Internet</div>
+          <input type="number" id="s_internet" placeholder="100000" oninput="save();render()" />
+        </div>
+      </div>
+      <div id="savings-preview" style="font-size:12px;color:var(--text2);margin-top:4px;margin-bottom:10px;"></div>
       <button class="export-btn" onclick="exportCSV()">⬇ Export data ke CSV</button>
       <button class="export-btn" onclick="clearData()" style="color:var(--red);border-color:var(--red);margin-top:4px">🗑 Reset semua data</button>
     </div>
@@ -302,31 +331,55 @@
 </div>
 
 <script>
-const SALARY = 4400000;
-const ALLOCS = [
-  { name: 'Kebutuhan harian', amt: 1500000, color: '#00e89a', icon: '🛒' },
-  { name: 'Sewa',             amt: 1000000, color: '#4fa3ff', icon: '🏠' },
-  { name: 'BPJS',             amt:  300000, color: '#ff6eb4', icon: '🏥' },
-  { name: 'Listrik',          amt:  200000, color: '#ffb347', icon: '⚡' },
-  { name: 'Internet',         amt:  100000, color: '#a78bfa', icon: '📡' },
-  { name: 'Tabungan',         amt: 1300000, color: '#39e896', icon: '💰' },
-];
+function getAllocs() {
+  const salary = +state.salary || 4400000;
+  const harian  = +state.alloc_harian  || 0;
+  const sewa    = +state.alloc_sewa    || 0;
+  const bpjs    = +state.alloc_bpjs    || 0;
+  const listrik = +state.alloc_listrik || 0;
+  const internet= +state.alloc_internet|| 0;
+  const tabungan = Math.max(0, salary - harian - sewa - bpjs - listrik - internet);
+  return [
+    { name: 'Kebutuhan harian', amt: harian,   color: '#00e89a' },
+    { name: 'Sewa',             amt: sewa,     color: '#4fa3ff' },
+    { name: 'BPJS',             amt: bpjs,     color: '#ff6eb4' },
+    { name: 'Listrik',          amt: listrik,  color: '#ffb347' },
+    { name: 'Internet',         amt: internet, color: '#a78bfa' },
+    { name: 'Tabungan',         amt: tabungan, color: '#39e896' },
+  ];
+}
 const CAT_ICONS = {
   'Makan & minum':'🍜','Transport':'🚗','Belanja':'🛍','Tagihan':'📋',
   'Hiburan':'🎮','Kesehatan':'💊','Lainnya':'📌',
   'Uang makan':'🍱','Bonus':'🎉','Freelance':'💼','Transfer masuk':'💸'
 };
 
-let state = { payday: '', daily_target: 50000, entries: [] };
+const DEFAULT_STATE = {
+  payday: '', daily_target: 50000, entries: [],
+  salary: 4400000,
+  alloc_harian: 1500000,
+  alloc_sewa: 1000000,
+  alloc_bpjs: 300000,
+  alloc_listrik: 200000,
+  alloc_internet: 100000,
+};
+
+let state = { ...DEFAULT_STATE };
 let activeTab = 'today';
 let entryType = 'out';
 let settingsOpen = false;
 
-try { const s = localStorage.getItem('dompetku_v1'); if (s) state = JSON.parse(s); } catch(e){}
+try { const s = localStorage.getItem('dompetku_v1'); if (s) state = { ...DEFAULT_STATE, ...JSON.parse(s) }; } catch(e){}
 
 function save() {
-  state.payday = document.getElementById('payday').value || '';
+  state.payday       = document.getElementById('payday').value || '';
   state.daily_target = +document.getElementById('daily_target').value || 50000;
+  state.salary       = +document.getElementById('s_salary').value   || 4400000;
+  state.alloc_harian = +document.getElementById('s_harian').value   || 0;
+  state.alloc_sewa   = +document.getElementById('s_sewa').value     || 0;
+  state.alloc_bpjs   = +document.getElementById('s_bpjs').value     || 0;
+  state.alloc_listrik= +document.getElementById('s_listrik').value  || 0;
+  state.alloc_internet=+document.getElementById('s_internet').value || 0;
   try { localStorage.setItem('dompetku_v1', JSON.stringify(state)); } catch(e){}
 }
 
@@ -388,8 +441,17 @@ function render() {
     now.toLocaleDateString('id-ID', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
 
   // Sync settings inputs
-  document.getElementById('payday').value = state.payday || '';
-  document.getElementById('daily_target').value = state.daily_target;
+  document.getElementById('payday').value        = state.payday || '';
+  document.getElementById('daily_target').value  = state.daily_target;
+  document.getElementById('s_salary').value      = state.salary      || 4400000;
+  document.getElementById('s_harian').value      = state.alloc_harian  || 1500000;
+  document.getElementById('s_sewa').value        = state.alloc_sewa    || 1000000;
+  document.getElementById('s_bpjs').value        = state.alloc_bpjs    || 300000;
+  document.getElementById('s_listrik').value     = state.alloc_listrik || 200000;
+  document.getElementById('s_internet').value    = state.alloc_internet|| 100000;
+
+  const ALLOCS = getAllocs();
+  const SALARY = +state.salary || 4400000;
 
   // Default entry date to today
   if (!document.getElementById('entry-date').value) {
@@ -412,17 +474,23 @@ function render() {
       <div class="alloc-left">
         <div class="legend-dot" style="background:${a.color}"></div>
         <span>${a.name}</span>
-        <span class="alloc-pct">${(a.amt/SALARY*100).toFixed(0)}%</span>
+        <span class="alloc-pct">${SALARY > 0 ? (a.amt/SALARY*100).toFixed(0) : 0}%</span>
       </div>
       <span class="alloc-amt${i===ALLOCS.length-1?' alloc-savings':''}">${fmt(a.amt)}</span>
     </div>`).join('');
+
+  const savingsAmt = ALLOCS[ALLOCS.length-1].amt;
+  const sp = document.getElementById('savings-preview');
+  if (sp) sp.textContent = savingsAmt >= 0
+    ? `Tabungan otomatis: ${fmt(savingsAmt)}/bulan`
+    : `⚠ Alokasi melebihi gaji sebesar ${fmt(Math.abs(savingsAmt))}`;
 
   // Stats
   const days = daysUntilPay();
   const { spent, extraIncome } = calcAll();
   const { spent: tSpent, income: tIncome } = calcToday();
   const target = +state.daily_target || 50000;
-  const baseBudget = 1500000;
+  const baseBudget = +state.alloc_harian || 1500000;
   const totalAvail = baseBudget + extraIncome;
   const remaining = totalAvail - spent;
   const dailyLeft = days > 0 ? remaining / days : remaining;
