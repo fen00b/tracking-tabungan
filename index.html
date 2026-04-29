@@ -89,22 +89,40 @@
     margin-bottom: 14px;
   }
 
-  /* Allocation */
-  .stacked-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 1px; margin-bottom: 10px; }
-  .stacked-seg { height: 100%; transition: width 0.3s; }
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 14px; }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
-  .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
-  .alloc-row {
+  /* Checklist */
+  .bill-item {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 0; border-bottom: 1px solid var(--border);
-    font-size: 13px;
+    padding: 9px 0; border-bottom: 1px solid var(--border); cursor: pointer;
   }
-  .alloc-row:last-child { border-bottom: none; }
-  .alloc-left { display: flex; align-items: center; gap: 8px; }
-  .alloc-pct { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; }
-  .alloc-amt { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); }
-  .alloc-savings { color: var(--green); }
+  .bill-item:last-child { border-bottom: none; }
+  .bill-left { display: flex; align-items: center; gap: 10px; }
+  .bill-check {
+    width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+    border: 1.5px solid var(--border2); display: flex; align-items: center;
+    justify-content: center; font-size: 11px; transition: all 0.15s;
+  }
+  .bill-check.paid { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .bill-check.unpaid { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+  .bill-name { font-size: 13px; color: var(--text); }
+  .bill-date { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .bill-amt { font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text2); }
+  .bill-amt.paid { color: var(--green); }
+  .bill-amt.unpaid { color: var(--red); }
+
+  /* Summary */
+  .summary-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-label { display: flex; align-items: center; gap: 7px; color: var(--text2); }
+  .summary-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .summary-amt { font-family: 'DM Mono', monospace; font-size: 13px; }
+  .summary-total {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border2);
+    font-size: 13px; font-weight: 500;
+  }
 
   /* Type toggle */
   .type-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
@@ -137,6 +155,7 @@
   input::placeholder { color: var(--text3); }
   input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
   select option { background: var(--surface2); }
+  select optgroup { background: var(--surface); color: var(--text2); font-size: 11px; }
   .add-btn {
     width: 100%;
     padding: 10px;
@@ -228,11 +247,11 @@
   <!-- Stats -->
   <div class="stats-grid" id="stats"></div>
 
-  <!-- Salary allocation -->
-  <div class="card">
-    <div class="card-title">Alokasi Gaji</div>
-    <div id="stacked-bar-wrap"></div>
-    <div id="alloc-list"></div>
+  <!-- Bill checklist + summary (hidden when no data) -->
+  <div class="card" id="bill-card" style="display:none">
+    <div class="card-title">Tagihan Bulan Ini</div>
+    <div id="bill-list"></div>
+    <div id="alloc-summary" style="margin-top:14px;"></div>
   </div>
 
   <!-- Input -->
@@ -248,20 +267,36 @@
     </div>
     <div class="form-row">
       <select id="cat">
-        <option>Makan & minum</option>
-        <option>Transport</option>
-        <option>Belanja</option>
-        <option>Tagihan</option>
-        <option>Hiburan</option>
-        <option>Kesehatan</option>
-        <option>Lainnya</option>
+        <optgroup label="Kebutuhan Harian">
+          <option>Makan & minum</option>
+          <option>Transport</option>
+          <option>Belanja</option>
+          <option>Jajan</option>
+        </optgroup>
+        <optgroup label="Tagihan Rutin">
+          <option>Sewa</option>
+          <option>Listrik</option>
+          <option>Internet</option>
+          <option>BPJS</option>
+          <option>Air / PAM</option>
+          <option>Tagihan lainnya</option>
+        </optgroup>
+        <optgroup label="Lainnya">
+          <option>Kesehatan</option>
+          <option>Hiburan</option>
+          <option>Darurat</option>
+          <option>Lainnya</option>
+        </optgroup>
       </select>
       <select id="inc-cat" style="display:none">
-        <option>Uang makan</option>
-        <option>Bonus</option>
-        <option>Freelance</option>
-        <option>Transfer masuk</option>
-        <option>Lainnya</option>
+        <optgroup label="Pemasukan">
+          <option>Gaji</option>
+          <option>Uang makan</option>
+          <option>Bonus</option>
+          <option>Freelance</option>
+          <option>Transfer masuk</option>
+          <option>Lainnya</option>
+        </optgroup>
       </select>
       <input type="date" id="entry-date" />
     </div>
@@ -273,6 +308,7 @@
     <div class="log-tabs">
       <div class="log-tab active" onclick="setTab('today')">Hari ini</div>
       <div class="log-tab" onclick="setTab('all')">Semua</div>
+      <div class="log-tab" onclick="setTab('bills')">Tagihan</div>
     </div>
     <div id="log-wrap"></div>
   </div>
@@ -349,9 +385,12 @@ function getAllocs() {
   ];
 }
 const CAT_ICONS = {
-  'Makan & minum':'🍜','Transport':'🚗','Belanja':'🛍','Tagihan':'📋',
-  'Hiburan':'🎮','Kesehatan':'💊','Lainnya':'📌',
-  'Uang makan':'🍱','Bonus':'🎉','Freelance':'💼','Transfer masuk':'💸'
+  'Makan & minum':'🍜','Transport':'🚗','Belanja':'🛍','Jajan':'🧋',
+  'Sewa':'🏠','Listrik':'⚡','Internet':'📡','BPJS':'🏥',
+  'Air / PAM':'💧','Tagihan lainnya':'📋',
+  'Kesehatan':'💊','Hiburan':'🎮','Darurat':'🚨','Lainnya':'📌',
+  'Gaji':'💵','Uang makan':'🍱','Bonus':'🎉','Freelance':'💼',
+  'Transfer masuk':'💸',
 };
 
 const DEFAULT_STATE = {
@@ -406,14 +445,22 @@ function daysUntilPay() {
 
 function calcAll() {
   let spent = 0, extraIncome = 0;
-  state.entries.forEach(e => { e.type === 'in' ? extraIncome += e.amt : spent += e.amt; });
+  const DAILY_CATS = ['Sewa','Listrik','Internet','BPJS','Air / PAM','Tagihan lainnya'];
+  state.entries.forEach(e => {
+    if (e.type === 'in' && e.cat !== 'Gaji') extraIncome += e.amt;
+    else if (e.type === 'out' && !DAILY_CATS.includes(e.cat)) spent += e.amt;
+  });
   return { spent, extraIncome };
 }
 
 function calcToday() {
   const t = todayStr();
+  const BILL_CATS = ['Sewa','Listrik','Internet','BPJS','Air / PAM','Tagihan lainnya'];
   let spent = 0, income = 0;
-  state.entries.filter(e => e.date === t).forEach(e => { e.type==='in' ? income+=e.amt : spent+=e.amt; });
+  state.entries.filter(e => e.date === t).forEach(e => {
+    if (e.type==='in' && e.cat !== 'Gaji') income += e.amt;
+    else if (e.type==='out' && !BILL_CATS.includes(e.cat)) spent += e.amt;
+  });
   return { spent, income };
 }
 
@@ -458,32 +505,102 @@ function render() {
     document.getElementById('entry-date').value = todayStr();
   }
 
-  // Stacked bar
-  const barHTML = ALLOCS.map(a =>
-    `<div class="stacked-seg" style="width:${(a.amt/SALARY*100).toFixed(1)}%;background:${a.color}"></div>`
-  ).join('');
-  document.getElementById('stacked-bar-wrap').innerHTML = `
-    <div class="stacked-bar">${barHTML}</div>
-    <div class="legend">${ALLOCS.map(a=>`
-      <div class="legend-item">
-        <div class="legend-dot" style="background:${a.color}"></div>${a.name}
-      </div>`).join('')}</div>
-  `;
-  document.getElementById('alloc-list').innerHTML = ALLOCS.map((a,i) => `
-    <div class="alloc-row">
-      <div class="alloc-left">
-        <div class="legend-dot" style="background:${a.color}"></div>
-        <span>${a.name}</span>
-        <span class="alloc-pct">${SALARY > 0 ? (a.amt/SALARY*100).toFixed(0) : 0}%</span>
-      </div>
-      <span class="alloc-amt${i===ALLOCS.length-1?' alloc-savings':''}">${fmt(a.amt)}</span>
-    </div>`).join('');
+  // Bill checklist + summary
+  const BILL_CATS = ['Sewa','Listrik','Internet','BPJS','Air / PAM','Tagihan lainnya'];
+  const BILL_COLORS = { 'Sewa':'#4fa3ff','Listrik':'#ffb347','Internet':'#a78bfa','BPJS':'#ff6eb4','Air / PAM':'#4fa3ff','Tagihan lainnya':'#888' };
 
-  const savingsAmt = ALLOCS[ALLOCS.length-1].amt;
-  const sp = document.getElementById('savings-preview');
-  if (sp) sp.textContent = savingsAmt >= 0
-    ? `Tabungan otomatis: ${fmt(savingsAmt)}/bulan`
-    : `⚠ Alokasi melebihi gaji sebesar ${fmt(Math.abs(savingsAmt))}`;
+  // Current month entries
+  const nowM = new Date();
+  const thisMonth = nowM.getFullYear()+'-'+String(nowM.getMonth()+1).padStart(2,'0');
+
+  // All entries this month
+  const monthEntries = state.entries.filter(e => e.date && e.date.startsWith(thisMonth));
+
+  // Income this month
+  const monthIncome = monthEntries.filter(e => e.type==='in').reduce((s,e)=>s+e.amt,0);
+  // Daily spend this month (non-bill)
+  const monthDailySpend = monthEntries.filter(e => e.type==='out' && !BILL_CATS.includes(e.cat)).reduce((s,e)=>s+e.amt,0);
+  // Bills paid this month per category
+  const billsPaid = {};
+  monthEntries.filter(e => e.type==='out' && BILL_CATS.includes(e.cat)).forEach(e => {
+    if (!billsPaid[e.cat]) billsPaid[e.cat] = { total:0, date:e.date };
+    billsPaid[e.cat].total += e.amt;
+    if (e.date > billsPaid[e.cat].date) billsPaid[e.cat].date = e.date;
+  });
+
+  const billCard = document.getElementById('bill-card');
+  if (state.entries.length === 0) {
+    billCard.style.display = 'none';
+  } else {
+    billCard.style.display = '';
+
+    // Build checklist from configured bills
+    const configuredBills = [
+      { cat:'Sewa',     amt: +state.alloc_sewa    || 0 },
+      { cat:'Listrik',  amt: +state.alloc_listrik || 0 },
+      { cat:'Internet', amt: +state.alloc_internet|| 0 },
+      { cat:'BPJS',     amt: +state.alloc_bpjs    || 0 },
+    ].filter(b => b.amt > 0);
+
+    // Also include any bill cats that appear in entries but aren't configured
+    const extraBillCats = [...new Set(
+      monthEntries.filter(e=>e.type==='out'&&BILL_CATS.includes(e.cat)).map(e=>e.cat)
+    )].filter(c => !configuredBills.find(b=>b.cat===c));
+    extraBillCats.forEach(c => configuredBills.push({ cat:c, amt: billsPaid[c]?.total||0 }));
+
+    document.getElementById('bill-list').innerHTML = configuredBills.length ? configuredBills.map(b => {
+      const paid = !!billsPaid[b.cat];
+      const paidAmt = billsPaid[b.cat]?.total || 0;
+      const paidDate = billsPaid[b.cat]?.date || '';
+      const icon = CAT_ICONS[b.cat] || '📋';
+      return `<div class="bill-item">
+        <div class="bill-left">
+          <div class="bill-check ${paid?'paid':'unpaid'}">${paid?'✓':'!'}</div>
+          <div>
+            <div class="bill-name">${icon} ${b.cat}</div>
+            <div class="bill-date">${paid ? 'Dibayar '+paidDate : 'Belum dibayar bulan ini'}</div>
+          </div>
+        </div>
+        <div class="bill-amt ${paid?'paid':'unpaid'}">${paid ? fmt(paidAmt) : fmt(b.amt)}</div>
+      </div>`;
+    }).join('') : '<div style="font-size:13px;color:var(--text3);padding:8px 0">Belum ada tagihan dikonfigurasi</div>';
+
+    // Summary section — only show if there's actual data this month
+    const totalBillsPaid = Object.values(billsPaid).reduce((s,v)=>s+v.total,0);
+    const salary = +state.salary || 0;
+    const allocHarian = +state.alloc_harian || 0;
+    const tabungan = Math.max(0, salary - (+state.alloc_sewa||0) - (+state.alloc_listrik||0) - (+state.alloc_internet||0) - (+state.alloc_bpjs||0) - allocHarian);
+
+    const summaryRows = [
+      { label:'Pemasukan', color:'#00e89a', amt: monthIncome, positive: true },
+      { label:'Tagihan dibayar', color:'#ff6eb4', amt: totalBillsPaid, positive: false },
+      { label:'Pengeluaran harian', color:'#ff4f4f', amt: monthDailySpend, positive: false },
+    ];
+    const netFlow = monthIncome - totalBillsPaid - monthDailySpend;
+    const allocSummaryEl = document.getElementById('alloc-summary');
+
+    if (monthIncome > 0 || totalBillsPaid > 0 || monthDailySpend > 0) {
+      allocSummaryEl.innerHTML = `
+        <div class="card-title" style="margin-bottom:10px">Ringkasan Bulan Ini</div>
+        ${summaryRows.filter(r=>r.amt>0).map(r=>`
+          <div class="summary-row">
+            <div class="summary-label">
+              <div class="summary-dot" style="background:${r.color}"></div>${r.label}
+            </div>
+            <span class="summary-amt" style="color:${r.positive?'var(--green)':'var(--red)'}">${r.positive?'+':'-'}${fmt(r.amt)}</span>
+          </div>`).join('')}
+        <div class="summary-total">
+          <span style="color:var(--text2)">Sisa / masuk tabungan</span>
+          <span style="font-family:'DM Mono',monospace;color:${netFlow>=0?'var(--green)':'var(--red)'}">
+            ${netFlow>=0?'+':''}${fmt(netFlow)}
+          </span>
+        </div>
+        ${tabungan>0?`<div style="font-size:11px;color:var(--text3);margin-top:6px">Target tabungan bulanan: ${fmt(tabungan)}</div>`:''}
+      `;
+    } else {
+      allocSummaryEl.innerHTML = '';
+    }
+  }
 
   // Stats
   const days = daysUntilPay();
@@ -522,14 +639,19 @@ function render() {
   `;
 
   // Log
+  const BILL_CATS = ['Sewa','Listrik','Internet','BPJS','Air / PAM','Tagihan lainnya'];
   const t = todayStr();
   const list = activeTab === 'today'
     ? state.entries.filter(e => e.date === t).slice().reverse()
+    : activeTab === 'bills'
+    ? state.entries.filter(e => BILL_CATS.includes(e.cat)).slice().reverse()
     : state.entries.slice().reverse();
+
+  const emptyMsg = activeTab === 'today' ? ' hari ini' : activeTab === 'bills' ? ' tagihan' : '';
 
   const wrap = document.getElementById('log-wrap');
   if (!list.length) {
-    wrap.innerHTML = `<div class="empty">Belum ada transaksi${activeTab==='today'?' hari ini':''}</div>`;
+    wrap.innerHTML = `<div class="empty">Belum ada transaksi${emptyMsg}</div>`;
   } else {
     wrap.innerHTML = list.map(e => `
       <div class="log-item">
@@ -550,7 +672,9 @@ function render() {
 
 function setTab(t) {
   activeTab = t;
-  document.querySelectorAll('.log-tab').forEach((el,i) => el.classList.toggle('active', i===(t==='today'?0:1)));
+  document.querySelectorAll('.log-tab').forEach((el,i) => {
+    el.classList.toggle('active', (i===0&&t==='today')||(i===1&&t==='all')||(i===2&&t==='bills'));
+  });
   render();
 }
 
