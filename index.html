@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dompetku — Money Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --border2: #3a3a3a;
+    --text: #f0f0f0;
+    --text2: #888;
+    --text3: #555;
+    --green: #00e89a;
+    --green-dim: #00e89a22;
+    --red: #ff4f4f;
+    --red-dim: #ff4f4f22;
+    --amber: #ffb347;
+    --amber-dim: #ffb34722;
+    --blue: #4fa3ff;
+    --blue-dim: #4fa3ff22;
+    --pink: #ff6eb4;
+    --purple: #a78bfa;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo span { color: var(--green); }
+  .header-date { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 1.25rem 1rem 6rem; }
+
+  /* Stats row */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 12px;
+  }
+  .stat-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-value { font-size: 15px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-sub { font-size: 10px; color: var(--text3); margin-top: 4px; }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+  /* Section card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text2);
+    margin-bottom: 14px;
+  }
+
+  /* Allocation */
+  .stacked-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 1px; margin-bottom: 10px; }
+  .stacked-seg { height: 100%; transition: width 0.3s; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .alloc-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .alloc-row:last-child { border-bottom: none; }
+  .alloc-left { display: flex; align-items: center; gap: 8px; }
+  .alloc-pct { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .alloc-amt { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); }
+  .alloc-savings { color: var(--green); }
+
+  /* Type toggle */
+  .type-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+  .type-btn {
+    flex: 1; padding: 8px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border2); font-size: 13px; font-weight: 500;
+    cursor: pointer; text-align: center; background: var(--surface2);
+    color: var(--text2); font-family: 'Sora', sans-serif;
+    transition: all 0.15s;
+  }
+  .type-btn.active-out { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+  .type-btn.active-in { background: var(--green-dim); color: var(--green); border-color: var(--green); }
+
+  /* Form inputs */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .form-row-3 { display: grid; grid-template-columns: 120px 1fr; gap: 8px; margin-bottom: 8px; }
+  input, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--green); }
+  input::placeholder { color: var(--text3); }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+  select option { background: var(--surface2); }
+  .add-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; background: var(--surface2);
+    color: var(--text); font-family: 'Sora', sans-serif;
+    transition: all 0.15s; margin-top: 4px;
+  }
+  .add-btn:hover { background: var(--border); }
+  .add-btn.out-btn { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+  .add-btn.in-btn { background: var(--green-dim); color: var(--green); border-color: var(--green); }
+  .add-btn:active { transform: scale(0.98); }
+
+  /* Log */
+  .log-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .log-tab {
+    padding: 5px 14px; border-radius: 20px;
+    border: 1px solid var(--border); font-size: 12px;
+    cursor: pointer; color: var(--text2);
+    background: transparent; font-family: 'Sora', sans-serif;
+    transition: all 0.15s;
+  }
+  .log-tab.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+  .log-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-left { display: flex; align-items: center; gap: 10px; }
+  .log-icon {
+    width: 34px; height: 34px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .log-icon.out { background: var(--red-dim); }
+  .log-icon.in { background: var(--green-dim); }
+  .log-desc { font-size: 13px; color: var(--text); line-height: 1.3; }
+  .log-meta { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .log-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .log-amt { font-size: 13px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .log-amt.out { color: var(--red); }
+  .log-amt.in { color: var(--green); }
+  .del-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text3); font-size: 14px; padding: 2px 4px;
+    transition: color 0.15s; line-height: 1;
+  }
+  .del-btn:hover { color: var(--red); }
+  .empty { font-size: 13px; color: var(--text3); text-align: center; padding: 24px 0; }
+
+  /* Settings toggle */
+  .settings-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none;
+  }
+  .settings-body { margin-top: 14px; display: none; }
+  .settings-body.open { display: block; }
+  .chevron { font-size: 12px; color: var(--text3); transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .settings-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+
+  /* Export btn */
+  .export-btn {
+    width: 100%; padding: 9px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border2); font-size: 12px;
+    cursor: pointer; background: transparent; color: var(--text2);
+    font-family: 'Sora', sans-serif; margin-top: 8px; transition: all 0.15s;
+  }
+  .export-btn:hover { background: var(--surface2); color: var(--text); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">dompet<span>ku</span></div>
+  <div class="header-date" id="header-date"></div>
+</div>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats-grid" id="stats"></div>
+
+  <!-- Salary allocation -->
+  <div class="card">
+    <div class="card-title">Alokasi Gaji</div>
+    <div id="stacked-bar-wrap"></div>
+    <div id="alloc-list"></div>
+  </div>
+
+  <!-- Input -->
+  <div class="card">
+    <div class="card-title">Catat Transaksi</div>
+    <div class="type-toggle">
+      <div class="type-btn active-out" id="btn-out" onclick="setType('out')">− Pengeluaran</div>
+      <div class="type-btn" id="btn-in" onclick="setType('in')">+ Pemasukan</div>
+    </div>
+    <div class="form-row-3">
+      <input type="number" id="amt" placeholder="Jumlah (Rp)" />
+      <input type="text" id="desc" placeholder="Keterangan..." />
+    </div>
+    <div class="form-row">
+      <select id="cat">
+        <option>Makan & minum</option>
+        <option>Transport</option>
+        <option>Belanja</option>
+        <option>Tagihan</option>
+        <option>Hiburan</option>
+        <option>Kesehatan</option>
+        <option>Lainnya</option>
+      </select>
+      <select id="inc-cat" style="display:none">
+        <option>Uang makan</option>
+        <option>Bonus</option>
+        <option>Freelance</option>
+        <option>Transfer masuk</option>
+        <option>Lainnya</option>
+      </select>
+      <input type="date" id="entry-date" />
+    </div>
+    <button class="add-btn out-btn" id="add-btn" onclick="addEntry()">+ Tambah Pengeluaran</button>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <div class="log-tabs">
+      <div class="log-tab active" onclick="setTab('today')">Hari ini</div>
+      <div class="log-tab" onclick="setTab('all')">Semua</div>
+    </div>
+    <div id="log-wrap"></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <div class="settings-toggle" onclick="toggleSettings()">
+      <div class="card-title" style="margin-bottom:0">Pengaturan</div>
+      <span class="chevron" id="chevron">▼</span>
+    </div>
+    <div class="settings-body" id="settings-body">
+      <div class="settings-grid">
+        <div>
+          <div class="settings-label">Tanggal gajian berikutnya</div>
+          <input type="date" id="payday" oninput="save();render()" />
+        </div>
+        <div>
+          <div class="settings-label">Target harian (Rp)</div>
+          <input type="number" id="daily_target" value="50000" oninput="save();render()" />
+        </div>
+      </div>
+      <button class="export-btn" onclick="exportCSV()">⬇ Export data ke CSV</button>
+      <button class="export-btn" onclick="clearData()" style="color:var(--red);border-color:var(--red);margin-top:4px">🗑 Reset semua data</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SALARY = 4400000;
+const ALLOCS = [
+  { name: 'Kebutuhan harian', amt: 1500000, color: '#00e89a', icon: '🛒' },
+  { name: 'Sewa',             amt: 1000000, color: '#4fa3ff', icon: '🏠' },
+  { name: 'BPJS',             amt:  300000, color: '#ff6eb4', icon: '🏥' },
+  { name: 'Listrik',          amt:  200000, color: '#ffb347', icon: '⚡' },
+  { name: 'Internet',         amt:  100000, color: '#a78bfa', icon: '📡' },
+  { name: 'Tabungan',         amt: 1300000, color: '#39e896', icon: '💰' },
+];
+const CAT_ICONS = {
+  'Makan & minum':'🍜','Transport':'🚗','Belanja':'🛍','Tagihan':'📋',
+  'Hiburan':'🎮','Kesehatan':'💊','Lainnya':'📌',
+  'Uang makan':'🍱','Bonus':'🎉','Freelance':'💼','Transfer masuk':'💸'
+};
+
+let state = { payday: '', daily_target: 50000, entries: [] };
+let activeTab = 'today';
+let entryType = 'out';
+let settingsOpen = false;
+
+try { const s = localStorage.getItem('dompetku_v1'); if (s) state = JSON.parse(s); } catch(e){}
+
+function save() {
+  state.payday = document.getElementById('payday').value || '';
+  state.daily_target = +document.getElementById('daily_target').value || 50000;
+  try { localStorage.setItem('dompetku_v1', JSON.stringify(state)); } catch(e){}
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function fmt(n) { return 'Rp '+Math.round(n).toLocaleString('id-ID'); }
+function fmtShort(n) {
+  n = Math.round(n);
+  if (n >= 1000000) return 'Rp '+(n/1000000).toFixed(1).replace('.0','')+'jt';
+  if (n >= 1000) return 'Rp '+(n/1000).toFixed(0)+'rb';
+  return 'Rp '+n;
+}
+
+function daysUntilPay() {
+  if (!state.payday) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const pay = new Date(state.payday);
+  const diff = Math.ceil((pay - now) / 86400000);
+  return diff > 0 ? diff : 0;
+}
+
+function calcAll() {
+  let spent = 0, extraIncome = 0;
+  state.entries.forEach(e => { e.type === 'in' ? extraIncome += e.amt : spent += e.amt; });
+  return { spent, extraIncome };
+}
+
+function calcToday() {
+  const t = todayStr();
+  let spent = 0, income = 0;
+  state.entries.filter(e => e.date === t).forEach(e => { e.type==='in' ? income+=e.amt : spent+=e.amt; });
+  return { spent, income };
+}
+
+function setType(t) {
+  entryType = t;
+  document.getElementById('btn-out').className = 'type-btn'+(t==='out'?' active-out':'');
+  document.getElementById('btn-in').className = 'type-btn'+(t==='in'?' active-in':'');
+  document.getElementById('cat').style.display = t==='out' ? '' : 'none';
+  document.getElementById('inc-cat').style.display = t==='in' ? '' : 'none';
+  const btn = document.getElementById('add-btn');
+  btn.className = 'add-btn '+(t==='out'?'out-btn':'in-btn');
+  btn.textContent = t==='out' ? '+ Tambah Pengeluaran' : '+ Tambah Pemasukan';
+}
+
+function toggleSettings() {
+  settingsOpen = !settingsOpen;
+  document.getElementById('settings-body').className = 'settings-body'+(settingsOpen?' open':'');
+  document.getElementById('chevron').className = 'chevron'+(settingsOpen?' open':'');
+}
+
+function render() {
+  // Header date
+  const now = new Date();
+  document.getElementById('header-date').textContent =
+    now.toLocaleDateString('id-ID', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+
+  // Sync settings inputs
+  document.getElementById('payday').value = state.payday || '';
+  document.getElementById('daily_target').value = state.daily_target;
+
+  // Default entry date to today
+  if (!document.getElementById('entry-date').value) {
+    document.getElementById('entry-date').value = todayStr();
+  }
+
+  // Stacked bar
+  const barHTML = ALLOCS.map(a =>
+    `<div class="stacked-seg" style="width:${(a.amt/SALARY*100).toFixed(1)}%;background:${a.color}"></div>`
+  ).join('');
+  document.getElementById('stacked-bar-wrap').innerHTML = `
+    <div class="stacked-bar">${barHTML}</div>
+    <div class="legend">${ALLOCS.map(a=>`
+      <div class="legend-item">
+        <div class="legend-dot" style="background:${a.color}"></div>${a.name}
+      </div>`).join('')}</div>
+  `;
+  document.getElementById('alloc-list').innerHTML = ALLOCS.map((a,i) => `
+    <div class="alloc-row">
+      <div class="alloc-left">
+        <div class="legend-dot" style="background:${a.color}"></div>
+        <span>${a.name}</span>
+        <span class="alloc-pct">${(a.amt/SALARY*100).toFixed(0)}%</span>
+      </div>
+      <span class="alloc-amt${i===ALLOCS.length-1?' alloc-savings':''}">${fmt(a.amt)}</span>
+    </div>`).join('');
+
+  // Stats
+  const days = daysUntilPay();
+  const { spent, extraIncome } = calcAll();
+  const { spent: tSpent, income: tIncome } = calcToday();
+  const target = +state.daily_target || 50000;
+  const baseBudget = 1500000;
+  const totalAvail = baseBudget + extraIncome;
+  const remaining = totalAvail - spent;
+  const dailyLeft = days > 0 ? remaining / days : remaining;
+  const todayNet = target + tIncome - tSpent;
+  const pct = Math.max(0, Math.min(100, remaining / totalAvail * 100));
+
+  const balColor = pct < 30 ? 'red' : pct < 60 ? 'amber' : 'green';
+  const barFill = pct < 30 ? '#ff4f4f' : pct < 60 ? '#ffb347' : '#00e89a';
+  const dClass = dailyLeft < target*0.5 ? 'red' : dailyLeft < target*0.8 ? 'amber' : 'green';
+  const tClass = todayNet < 0 ? 'red' : todayNet < target*0.3 ? 'amber' : 'green';
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Sisa budget</div>
+      <div class="stat-value ${balColor}">${fmtShort(remaining)}</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${barFill}"></div></div>
+      <div class="stat-sub">${days!==null ? days+' hari lagi' : 'set gajian'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Per hari tersisa</div>
+      <div class="stat-value ${dClass}">${days>0 ? fmtShort(dailyLeft) : '—'}</div>
+      <div class="stat-sub">target ${fmtShort(target)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Hari ini sisa</div>
+      <div class="stat-value ${tClass}">${fmtShort(todayNet)}</div>
+      <div class="stat-sub">${tIncome>0?'+'+fmtShort(tIncome)+' masuk':'keluar '+fmtShort(tSpent)}</div>
+    </div>
+  `;
+
+  // Log
+  const t = todayStr();
+  const list = activeTab === 'today'
+    ? state.entries.filter(e => e.date === t).slice().reverse()
+    : state.entries.slice().reverse();
+
+  const wrap = document.getElementById('log-wrap');
+  if (!list.length) {
+    wrap.innerHTML = `<div class="empty">Belum ada transaksi${activeTab==='today'?' hari ini':''}</div>`;
+  } else {
+    wrap.innerHTML = list.map(e => `
+      <div class="log-item">
+        <div class="log-left">
+          <div class="log-icon ${e.type}">${CAT_ICONS[e.cat]||'📌'}</div>
+          <div>
+            <div class="log-desc">${e.desc||e.cat}</div>
+            <div class="log-meta">${e.cat} · ${e.date}</div>
+          </div>
+        </div>
+        <div class="log-right">
+          <span class="log-amt ${e.type}">${e.type==='in'?'+':'-'}${fmt(e.amt)}</span>
+          <button class="del-btn" onclick="delEntry('${e.id}')">✕</button>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function setTab(t) {
+  activeTab = t;
+  document.querySelectorAll('.log-tab').forEach((el,i) => el.classList.toggle('active', i===(t==='today'?0:1)));
+  render();
+}
+
+function addEntry() {
+  const amt = +document.getElementById('amt').value;
+  const desc = document.getElementById('desc').value.trim();
+  const cat = entryType==='in' ? document.getElementById('inc-cat').value : document.getElementById('cat').value;
+  const date = document.getElementById('entry-date').value || todayStr();
+  if (!amt || amt <= 0) { document.getElementById('amt').focus(); return; }
+  state.entries.push({ id: Date.now()+'', amt, desc, cat, date, type: entryType });
+  document.getElementById('amt').value = '';
+  document.getElementById('desc').value = '';
+  save();
+  render();
+}
+
+function delEntry(id) {
+  if (!confirm('Hapus transaksi ini?')) return;
+  state.entries = state.entries.filter(e => e.id !== id);
+  save();
+  render();
+}
+
+function exportCSV() {
+  const rows = [['Tanggal','Tipe','Kategori','Keterangan','Jumlah']];
+  state.entries.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e => {
+    rows.push([e.date, e.type==='in'?'Pemasukan':'Pengeluaran', e.cat, e.desc||'', e.amt]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download = 'dompetku-'+todayStr()+'.csv';
+  a.click();
+}
+
+function clearData() {
+  if (!confirm('Reset semua data? Ini tidak bisa dibatalkan.')) return;
+  state.entries = [];
+  save();
+  render();
+}
+
+render();
+setInterval(render, 60000);
+</script>
+</body>
+</html>
